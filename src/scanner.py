@@ -79,9 +79,7 @@ def scan_token(searcher: Scanner) -> Scanner:
         searcher = number(searcher)
 
     else:
-        print(
-            f"\033[91mError in line {searcher.line}: Unexpected character\033[0m"
-        )
+        print(f"\033[91mError in line {searcher.line}: Unexpected character\033[0m")
         raise Exception
 
     return searcher
