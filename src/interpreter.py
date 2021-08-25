@@ -1,24 +1,35 @@
+from typing import List
 import dataclasses
 
 import expr
 import scanner
+import statem
 
 
 @dataclasses.dataclass
 class Interpreter:
     """ """
 
-    expression: expr.Expr
+    statements: List[statem.Statem]
 
 
-def init_interpreter(expression: expr.Expr) -> Interpreter:
+def init_interpreter(statements: List[statem.Statem]) -> Interpreter:
     """ """
-    return Interpreter(expression=expression)
+    return Interpreter(statements=statements)
 
 
-def interpret(inspector: Interpreter) -> int:
+def interpret(inspector: Interpreter) -> List[str]:
     """ """
-    return evaluate(inspector.expression)
+    result: List[str] = []
+
+    for statement in inspector.statements:
+        if isinstance(statement, statem.Expression):
+            evaluate(statement.expression)
+
+        elif isinstance(statement, statem.Print):
+            result.append(str(evaluate(statement.expression)))
+
+    return result
 
 
 def evaluate(expression: expr.Expr):

@@ -23,6 +23,33 @@ def init_vm(bytecode: List[compiler.Byte]) -> VM:
     return VM(bytecode=bytecode, ip=0, stack=stack, top=0)
 
 
+def run(emulator: VM) -> List[str]:
+    """ """
+    result: List[str] = []
+
+    while not is_at_end(emulator):
+        emulator, instruction = read_byte(emulator)
+
+        if instruction == compiler.OpCode.OP_CONSTANT:
+            emulator, constant = read_constant(emulator)
+            emulator = push(emulator, constant)
+
+        elif instruction == compiler.OpCode.OP_POP:
+            emulator, value = pop(emulator)
+
+        elif instruction == compiler.OpCode.OP_ADD:
+            emulator = binary_op(emulator, "+")
+
+        elif instruction == compiler.OpCode.OP_MULTIPLY:
+            emulator = binary_op(emulator, "*")
+
+        elif instruction == compiler.OpCode.OP_PRINT:
+            emulator, value = pop(emulator)
+            result.append(str(value))
+
+    return result
+
+
 def push(emulator: VM, value: int) -> VM:
     """ """
     emulator.stack[emulator.top] = value
@@ -67,25 +94,3 @@ def binary_op(emulator: VM, op: str) -> VM:
 def is_at_end(emulator: VM) -> bool:
     """ """
     return emulator.ip == len(emulator.bytecode)
-
-
-def run(emulator: VM) -> int:
-    """ """
-    while True:
-        if is_at_end(emulator):
-            break
-
-        emulator, instruction = read_byte(emulator)
-
-        if instruction == compiler.OpCode.OP_CONSTANT:
-            emulator, constant = read_constant(emulator)
-            emulator = push(emulator, constant)
-
-        elif instruction == compiler.OpCode.OP_ADD:
-            emulator = binary_op(emulator, "+")
-
-        elif instruction == compiler.OpCode.OP_MULTIPLY:
-            emulator = binary_op(emulator, "*")
-
-    _, value = pop(emulator)
-    return value

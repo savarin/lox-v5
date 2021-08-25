@@ -1,8 +1,9 @@
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 import dataclasses
 
 import expr
 import scanner
+import statem
 
 
 class ParseError(Exception):
@@ -24,14 +25,50 @@ def init_parser(tokens: List[scanner.Token]) -> Parser:
     return Parser(tokens=tokens, current=0)
 
 
-def parse(processor: Parser) -> Optional[expr.Expr]:
+def parse(processor: Parser) -> List[statem.Statem]:
     """ """
-    try:
-        _, individual_expression = term(processor)
-        return individual_expression
+    statements: List[statem.Statem] = []
 
-    except ParseError:
-        return None
+    while not is_at_end(processor):
+        processor, individual_statement = statement(processor)
+        statements.append(individual_statement)
+
+    return statements
+
+
+def statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
+    """ """
+    processor, is_match = match(processor, [scanner.TokenType.PRINT])
+
+    if is_match:
+        return print_statement(processor)
+
+    return expression_statement(processor)
+
+
+def print_statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
+    """ """
+    processor, individual_expression = expression(processor)
+    processor, _ = consume(
+        processor, scanner.TokenType.SEMICOLON, "Expect ';' after print statement."
+    )
+
+    return processor, statem.Print(individual_expression)
+
+
+def expression_statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
+    """ """
+    processor, individual_expression = expression(processor)
+    processor, _ = consume(
+        processor, scanner.TokenType.SEMICOLON, "Expect ';' after expression."
+    )
+
+    return processor, statem.Expression(individual_expression)
+
+
+def expression(processor: Parser) -> Tuple[Parser, expr.Expr]:
+    """ """
+    return term(processor)
 
 
 def term(processor: Parser) -> Tuple[Parser, expr.Expr]:

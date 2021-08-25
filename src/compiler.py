@@ -4,6 +4,7 @@ import enum
 
 import expr
 import scanner
+import statem
 
 
 Byte = Union["OpCode", int]
@@ -16,6 +17,7 @@ class OpCode(enum.Enum):
     OP_POP = "OP_POP"
     OP_ADD = "OP_ADD"
     OP_MULTIPLY = "OP_MULTIPLY"
+    OP_PRINT = "OP_PRINT"
 
 
 operator_mapping: Dict[scanner.TokenType, OpCode] = {
@@ -28,33 +30,65 @@ operator_mapping: Dict[scanner.TokenType, OpCode] = {
 class Compiler:
     """ """
 
-    expression: expr.Expr
+    statements: List[statem.Statem]
 
 
-def init_compiler(expression: expr.Expr) -> Compiler:
+def init_compiler(statements: List[statem.Statem]) -> Compiler:
     """ """
-    return Compiler(expression=expression)
+    return Compiler(statements=statements)
 
 
-def compile(composer: Compiler) -> List[Union[OpCode, int]]:
+def compile(composer: Compiler) -> List[Byte]:
     """ """
     bytecode: List[Byte] = []
 
-    def evaluate(expression: expr.Expr):
-        """ """
-        if isinstance(expression, expr.Binary):
-            evaluate(expression.left)
-            evaluate(expression.right)
+    for statement in composer.statements:
+        bytecode += execute(statement)
 
-            token_type = operator_mapping[expression.operator.token_type]
-            bytecode.append(token_type)
-
-        elif isinstance(expression, expr.Grouping):
-            evaluate(expression.expression)
-
-        elif isinstance(expression, expr.Literal):
-            bytecode.append(OpCode.OP_CONSTANT)
-            bytecode.append(expression.value)
-
-    evaluate(composer.expression)
     return bytecode
+
+
+def execute(statement: statem.Statem) -> List[Byte]:
+    """ """
+    bytecode: List[Byte] = []
+
+    if isinstance(statement, statem.Expression):
+        bytecode += evaluate(statement.expression)
+        bytecode.append(OpCode.OP_POP)
+
+        return bytecode
+
+    elif isinstance(statement, statem.Print):
+        bytecode += evaluate(statement.expression)
+        bytecode.append(OpCode.OP_PRINT)
+
+        return bytecode
+
+    raise Exception
+
+
+def evaluate(expression: expr.Expr) -> List[Byte]:
+    """ """
+    bytecode: List[Byte] = []
+
+    if isinstance(expression, expr.Binary):
+        bytecode += evaluate(expression.left)
+        bytecode += evaluate(expression.right)
+
+        token_type = operator_mapping[expression.operator.token_type]
+        bytecode.append(token_type)
+
+        return bytecode
+
+    elif isinstance(expression, expr.Grouping):
+        bytecode += evaluate(expression.expression)
+
+        return bytecode
+
+    elif isinstance(expression, expr.Literal):
+        bytecode.append(OpCode.OP_CONSTANT)
+        bytecode.append(expression.value)
+
+        return bytecode
+
+    raise Exception

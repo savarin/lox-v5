@@ -11,7 +11,8 @@ def source_to_tokens(source: str) -> List[scanner.Token]:
 
 def test_scan() -> None:
     """ """
-    tokens = source_to_tokens(source="1 * (2 + 3)")
+    tokens = source_to_tokens(source="1 * (2 + 3);")
+    assert len(tokens) == 9
 
     assert tokens[0] == scanner.Token(
         token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
@@ -35,5 +36,8 @@ def test_scan() -> None:
         token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
     )
     assert tokens[7] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[8] == scanner.Token(
         token_type=scanner.TokenType.EOF, lexeme="", literal=None, line=1
     )

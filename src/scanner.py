@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 import dataclasses
 import enum
 
@@ -10,12 +10,21 @@ class TokenType(enum.Enum):
     LEFT_PAREN = "LEFT_PAREN"
     RIGHT_PAREN = "RIGHT_PAREN"
     PLUS = "PLUS"
+    SEMICOLON = "SEMICOLON"
     STAR = "STAR"
 
     # Literals.
     NUMBER = "NUMBER"
 
+    # Keywords
+    PRINT = "PRINT"
+
     EOF = "EOF"
+
+
+keywords: Dict[str, TokenType] = {
+    "print": TokenType.PRINT,
+}
 
 
 @dataclasses.dataclass
@@ -69,6 +78,8 @@ def scan_token(searcher: Scanner) -> Scanner:
         searcher = add_token(searcher, TokenType.PLUS)
     elif character == "*":
         searcher = add_token(searcher, TokenType.STAR)
+    elif character == ";":
+        searcher = add_token(searcher, TokenType.SEMICOLON)
 
     elif character == "\n":
         searcher.line += 1
@@ -77,20 +88,14 @@ def scan_token(searcher: Scanner) -> Scanner:
 
     elif is_digit(character):
         searcher = number(searcher)
+    elif is_alpha(character):
+        searcher = identifier(searcher)
 
     else:
         print(f"\033[91mError in line {searcher.line}: Unexpected character\033[0m")
         raise Exception
 
     return searcher
-
-
-def advance(searcher: Scanner) -> Tuple[Scanner, str]:
-    """ """
-    character = searcher.source[searcher.current]
-    searcher.current += 1
-
-    return searcher, character
 
 
 def add_token(
@@ -105,9 +110,30 @@ def add_token(
     return searcher
 
 
-def is_digit(character: str) -> bool:
+def advance(searcher: Scanner) -> Tuple[Scanner, str]:
     """ """
-    return character >= "0" and character <= "9"
+    character = searcher.source[searcher.current]
+    searcher.current += 1
+
+    return searcher, character
+
+
+def peek(searcher: Scanner) -> str:
+    """ """
+    if is_at_end(searcher):
+        return "\0"
+
+    return searcher.source[searcher.current]
+
+
+def identifier(searcher: Scanner) -> Scanner:
+    """ """
+    while is_alpha_numeric(peek(searcher)):
+        searcher, _ = advance(searcher)
+
+    text = searcher.source[searcher.start : searcher.current]
+
+    return add_token(searcher, keywords[text])
 
 
 def number(searcher: Scanner) -> Scanner:
@@ -122,14 +148,25 @@ def number(searcher: Scanner) -> Scanner:
     )
 
 
-def peek(searcher: Scanner) -> str:
+def is_alpha_numeric(character: str) -> bool:
     """ """
-    if is_at_end(searcher):
-        return "\0"
+    return is_alpha(character) or is_digit(character)
 
-    return searcher.source[searcher.current]
+
+def is_alpha(character: str) -> bool:
+    """ """
+    return (
+        (character >= "a" and character <= "z")
+        or (character >= "A" and character <= "Z")
+        or character == "_"
+    )
+
+
+def is_digit(character: str) -> bool:
+    """ """
+    return character >= "0" and character <= "9"
 
 
 def is_at_end(searcher: Scanner) -> bool:
     """ """
-    return searcher.current >= len(searcher.source)
+    return searcher.current == len(searcher.source)
