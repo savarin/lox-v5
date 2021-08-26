@@ -11,6 +11,14 @@ class Expr(abc.ABC):
 
 
 @dataclasses.dataclass
+class Assign(Expr):
+    """ """
+
+    name: scanner.Token
+    value: Expr
+
+
+@dataclasses.dataclass
 class Binary(Expr):
     """ """
 
@@ -31,3 +39,10 @@ class Literal(Expr):
     """ """
 
     value: int
+
+
+@dataclasses.dataclass
+class Variable(Expr):
+    """ """
+
+    name: scanner.Token

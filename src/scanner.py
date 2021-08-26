@@ -9,14 +9,21 @@ class TokenType(enum.Enum):
     # Single-character tokens.
     LEFT_PAREN = "LEFT_PAREN"
     RIGHT_PAREN = "RIGHT_PAREN"
+    LEFT_BRACE = "LEFT_BRACE"
+    RIGHT_BRACE = "RIGHT_BRACE"
     PLUS = "PLUS"
     SEMICOLON = "SEMICOLON"
     STAR = "STAR"
 
+    # One or two character tokens.
+    EQUAL = "EQUAL"
+
     # Literals.
+    IDENTIFIER = "IDENTIFIER"
     NUMBER = "NUMBER"
 
     # Keywords
+    VAR = "VAR"
     PRINT = "PRINT"
 
     EOF = "EOF"
@@ -24,6 +31,7 @@ class TokenType(enum.Enum):
 
 keywords: Dict[str, TokenType] = {
     "print": TokenType.PRINT,
+    "var": TokenType.VAR,
 }
 
 
@@ -74,12 +82,19 @@ def scan_token(searcher: Scanner) -> Scanner:
         searcher = add_token(searcher, TokenType.LEFT_PAREN)
     elif character == ")":
         searcher = add_token(searcher, TokenType.RIGHT_PAREN)
+    elif character == "{":
+        searcher = add_token(searcher, TokenType.LEFT_BRACE)
+    elif character == "}":
+        searcher = add_token(searcher, TokenType.RIGHT_BRACE)
     elif character == "+":
         searcher = add_token(searcher, TokenType.PLUS)
     elif character == "*":
         searcher = add_token(searcher, TokenType.STAR)
     elif character == ";":
         searcher = add_token(searcher, TokenType.SEMICOLON)
+
+    elif character == "=":
+        searcher = add_token(searcher, TokenType.EQUAL)
 
     elif character == "\n":
         searcher.line += 1
@@ -132,8 +147,12 @@ def identifier(searcher: Scanner) -> Scanner:
         searcher, _ = advance(searcher)
 
     text = searcher.source[searcher.start : searcher.current]
+    token_type = keywords.get(text, None)
 
-    return add_token(searcher, keywords[text])
+    if token_type is None:
+        token_type = TokenType.IDENTIFIER
+
+    return add_token(searcher, token_type)
 
 
 def number(searcher: Scanner) -> Scanner:
