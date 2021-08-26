@@ -16,11 +16,11 @@ def source_to_statements(source: str) -> List[statem.Statem]:
 
 def test_parse_expression() -> None:
     """ """
-    statements = source_to_statements(source="1 * (2 + 3);")
+    statements = source_to_statements(source="print 1 * (2 + 3);")
     assert len(statements) == 1
 
     statement = statements[0]
-    assert isinstance(statement, statem.Expression)
+    assert isinstance(statement, statem.Print)
 
     expression = statement.expression
     assert isinstance(expression, expr.Binary)
@@ -271,3 +271,159 @@ print c;"""
     )
     assert print_statement_third_c.expression.name.lexeme == "c"
     assert print_statement_third_c.expression.name.literal is None
+
+
+def test_parse_function() -> None:
+    """ """
+    statements = source_to_statements(
+        source="fun add(a, b) { print a + b; } add(1, 2);"
+    )
+    assert len(statements) == 2
+
+    function = statements[0]
+    assert isinstance(function, statem.Function)
+    assert function.name.lexeme == "add"
+    assert function.parameters[0].lexeme == "a"
+    assert function.parameters[1].lexeme == "b"
+
+    body = function.body[0]
+    assert isinstance(body, statem.Print)
+    assert isinstance(body.expression, expr.Binary)
+    assert isinstance(body.expression.operator, scanner.Token)
+    assert body.expression.operator.lexeme == "+"
+    assert isinstance(body.expression.left, expr.Variable)
+    assert body.expression.left.name.lexeme == "a"
+    assert isinstance(body.expression.right, expr.Variable)
+    assert body.expression.right.name.lexeme == "b"
+
+    call = statements[1]
+    assert isinstance(call, statem.Expression)
+    assert isinstance(call.expression, expr.Call)
+    assert isinstance(call.expression.callee, expr.Variable)
+    assert call.expression.callee.name.lexeme == "add"
+    assert isinstance(call.expression.arguments[0], expr.Literal)
+    assert call.expression.arguments[0].value == 1
+    assert isinstance(call.expression.arguments[1], expr.Literal)
+    assert call.expression.arguments[1].value == 2
+
+    statements = source_to_statements(
+        source="fun count(n) { if (n == 1) return 1; return count(n - 1); } print count(3);"
+    )
+    assert len(statements) == 2
+
+    function = statements[0]
+    assert isinstance(function, statem.Function)
+    assert function.name.lexeme == "count"
+    assert function.parameters[0].lexeme == "n"
+
+    body = function.body[0]
+    assert isinstance(body, statem.If)
+    assert isinstance(body.condition, expr.Binary)
+    assert body.condition.operator.lexeme == "=="
+    assert isinstance(body.condition.left, expr.Variable)
+    assert body.condition.left.name.lexeme == "n"
+    assert isinstance(body.condition.right, expr.Literal)
+    assert body.condition.right.value == 1
+
+    then_branch = body.then_branch
+    assert isinstance(then_branch, statem.Return)
+    assert isinstance(then_branch.keyword, scanner.Token)
+    assert then_branch.keyword.lexeme == "return"
+    assert isinstance(then_branch.value, expr.Literal)
+    assert then_branch.value.value == 1
+
+    else_branch = body.else_branch
+    assert else_branch is None
+
+    return_statement = function.body[1]
+    assert isinstance(return_statement, statem.Return)
+    assert isinstance(return_statement.value, expr.Call)
+    assert isinstance(return_statement.value.callee, expr.Variable)
+    assert return_statement.value.callee.name.lexeme == "count"
+    assert isinstance(return_statement.value.arguments[0], expr.Binary)
+    assert return_statement.value.arguments[0].operator.lexeme == "-"
+    assert isinstance(return_statement.value.arguments[0].left, expr.Variable)
+    assert return_statement.value.arguments[0].left.name.lexeme == "n"
+    assert isinstance(return_statement.value.arguments[0].right, expr.Literal)
+    assert return_statement.value.arguments[0].right.value == 1
+
+    call = statements[1]
+    assert isinstance(call, statem.Print)
+    assert isinstance(call.expression, expr.Call)
+    assert isinstance(call.expression.callee, expr.Variable)
+    assert call.expression.callee.name.lexeme == "count"
+    assert isinstance(call.expression.arguments[0], expr.Literal)
+    assert call.expression.arguments[0].value == 3
+
+    statements = source_to_statements(
+        source="fun fib(n) { if (n == 1) return 1; if (n == 2) return 1; return fib(n - 2) + fib(n - 1); } print fib(8);"
+    )
+    assert len(statements) == 2
+
+    function = statements[0]
+    assert isinstance(function, statem.Function)
+    assert function.name.lexeme == "fib"
+    assert function.parameters[0].lexeme == "n"
+
+    body = function.body[0]
+    assert isinstance(body, statem.If)
+    assert isinstance(body.condition, expr.Binary)
+    assert body.condition.operator.lexeme == "=="
+    assert isinstance(body.condition.left, expr.Variable)
+    assert body.condition.left.name.lexeme == "n"
+    assert isinstance(body.condition.right, expr.Literal)
+    assert body.condition.right.value == 1
+
+    then_branch = body.then_branch
+    assert isinstance(then_branch, statem.Return)
+    assert isinstance(then_branch.value, expr.Literal)
+    assert then_branch.value.value == 1
+
+    body = function.body[1]
+    assert isinstance(body, statem.If)
+    assert isinstance(body.condition, expr.Binary)
+    assert body.condition.operator.lexeme == "=="
+    assert isinstance(body.condition.left, expr.Variable)
+    assert body.condition.left.name.lexeme == "n"
+    assert isinstance(body.condition.right, expr.Literal)
+    assert body.condition.right.value == 2
+
+    then_branch = body.then_branch
+    assert isinstance(then_branch, statem.Return)
+    assert isinstance(then_branch.value, expr.Literal)
+    assert then_branch.value.value == 1
+
+    return_statement = function.body[2]
+    assert isinstance(return_statement, statem.Return)
+    assert isinstance(return_statement.value, expr.Binary)
+    assert return_statement.value.operator.lexeme == "+"
+
+    left_call = return_statement.value.left
+    assert isinstance(left_call, expr.Call)
+    assert isinstance(left_call.callee, expr.Variable)
+    assert left_call.callee.name.lexeme == "fib"
+    assert isinstance(left_call.arguments[0], expr.Binary)
+    assert left_call.arguments[0].operator.lexeme == "-"
+    assert isinstance(left_call.arguments[0].left, expr.Variable)
+    assert left_call.arguments[0].left.name.lexeme == "n"
+    assert isinstance(left_call.arguments[0].right, expr.Literal)
+    assert left_call.arguments[0].right.value == 2
+
+    right_call = return_statement.value.right
+    assert isinstance(right_call, expr.Call)
+    assert isinstance(right_call.callee, expr.Variable)
+    assert right_call.callee.name.lexeme == "fib"
+    assert isinstance(right_call.arguments[0], expr.Binary)
+    assert right_call.arguments[0].operator.lexeme == "-"
+    assert isinstance(right_call.arguments[0].left, expr.Variable)
+    assert right_call.arguments[0].left.name.lexeme == "n"
+    assert isinstance(right_call.arguments[0].right, expr.Literal)
+    assert right_call.arguments[0].right.value == 1
+
+    expression = statements[1]
+    assert isinstance(expression, statem.Print)
+    assert isinstance(expression.expression, expr.Call)
+    assert isinstance(expression.expression.callee, expr.Variable)
+    assert expression.expression.callee.name.lexeme == "fib"
+    assert isinstance(expression.expression.arguments[0], expr.Literal)
+    assert expression.expression.arguments[0].value == 8

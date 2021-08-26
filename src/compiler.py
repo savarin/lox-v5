@@ -16,12 +16,14 @@ class OpCode(enum.Enum):
     OP_CONSTANT = "OP_CONSTANT"
     OP_POP = "OP_POP"
     OP_ADD = "OP_ADD"
+    OP_SUBTRACT = "OP_SUBTRACT"
     OP_MULTIPLY = "OP_MULTIPLY"
     OP_PRINT = "OP_PRINT"
 
 
 operator_mapping: Dict[scanner.TokenType, OpCode] = {
     scanner.TokenType.PLUS: OpCode.OP_ADD,
+    scanner.TokenType.MINUS: OpCode.OP_SUBTRACT,
     scanner.TokenType.STAR: OpCode.OP_MULTIPLY,
 }
 

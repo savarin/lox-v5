@@ -41,6 +41,11 @@ def parse(processor: Parser) -> List[statem.Statem]:
 def declaration(processor: Parser) -> Tuple[Parser, Optional[statem.Statem]]:
     """ """
     try:
+        processor, is_match = match(processor, [scanner.TokenType.FUN])
+
+        if is_match:
+            return function(processor)
+
         processor, is_match = match(processor, [scanner.TokenType.VAR])
 
         if is_match:
@@ -50,6 +55,43 @@ def declaration(processor: Parser) -> Tuple[Parser, Optional[statem.Statem]]:
 
     except ParseError:
         return synchronize(processor), None
+
+
+def function(processor: Parser) -> Tuple[Parser, statem.Statem]:
+    """ """
+    processor, name = consume(
+        processor, scanner.TokenType.IDENTIFIER, "Expect function name."
+    )
+
+    processor, _ = consume(
+        processor, scanner.TokenType.LEFT_PAREN, "Expect '(' after function name."
+    )
+
+    parameters: List[scanner.Token] = []
+
+    if not check(processor, scanner.TokenType.RIGHT_PAREN):
+        while True:
+            processor, parameter = consume(
+                processor, scanner.TokenType.IDENTIFIER, "Expect parameter name."
+            )
+
+            parameters.append(parameter)
+
+            processor, is_match = match(processor, [scanner.TokenType.COMMA])
+
+            if not is_match:
+                break
+
+    processor, _ = consume(
+        processor, scanner.TokenType.RIGHT_PAREN, "Expect ')' after parameters."
+    )
+
+    processor, _ = consume(
+        processor, scanner.TokenType.LEFT_BRACE, "Expect '{' before body."
+    )
+
+    processor, body = block(processor)
+    return processor, statem.Function(name, parameters, body)
 
 
 def var_declaration(processor: Parser) -> Tuple[Parser, statem.Statem]:
@@ -73,10 +115,20 @@ def var_declaration(processor: Parser) -> Tuple[Parser, statem.Statem]:
 
 def statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
     """ """
+    processor, is_match = match(processor, [scanner.TokenType.IF])
+
+    if is_match:
+        return if_statement(processor)
+
     processor, is_match = match(processor, [scanner.TokenType.PRINT])
 
     if is_match:
         return print_statement(processor)
+
+    processor, is_match = match(processor, [scanner.TokenType.RETURN])
+
+    if is_match:
+        return return_statement(processor)
 
     processor, is_match = match(processor, [scanner.TokenType.LEFT_BRACE])
 
@@ -87,6 +139,30 @@ def statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
     return expression_statement(processor)
 
 
+def if_statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
+    """ """
+    processor, _ = consume(
+        processor, scanner.TokenType.LEFT_PAREN, "Expect '(' after 'if'."
+    )
+
+    processor, condition = expression(processor)
+
+    processor, _ = consume(
+        processor, scanner.TokenType.RIGHT_PAREN, "Expect ')' after if condition."
+    )
+
+    processor, then_branch = statement(processor)
+
+    else_branch = None
+
+    processor, is_match = match(processor, [scanner.TokenType.ELSE])
+
+    if is_match:
+        processor, else_branch = statement(processor)
+
+    return processor, statem.If(condition, then_branch, else_branch)
+
+
 def print_statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
     """ """
     processor, individual_expression = expression(processor)
@@ -95,6 +171,21 @@ def print_statement(processor: Parser) -> Tuple[Parser, statem.Statem]:
     )
 
     return processor, statem.Print(individual_expression)
+
+
+def return_statement(processor: Parser) -> Tuple[Parser, statem.Return]:
+    """ """
+    keyword = previous(processor)
+    value = None
+
+    if not check(processor, scanner.TokenType.SEMICOLON):
+        processor, value = expression(processor)
+
+    processor, _ = consume(
+        processor, scanner.TokenType.SEMICOLON, "Expect ';' after return value."
+    )
+
+    return processor, statem.Return(keyword, value)
 
 
 def block(processor: Parser) -> Tuple[Parser, List[statem.Statem]]:
@@ -133,18 +224,35 @@ def expression(processor: Parser) -> Tuple[Parser, expr.Expr]:
 
 def assignment(processor: Parser) -> Tuple[Parser, expr.Expr]:
     """ """
-    processor, term_expression = term(processor)
+    processor, equality_expression = equality(processor)
     processor, is_match = match(processor, [scanner.TokenType.EQUAL])
 
     if is_match:
         equals = previous(processor)
         processor, value = assignment(processor)
 
-        if isinstance(term_expression, expr.Variable):
-            name = term_expression.name
+        if isinstance(equality_expression, expr.Variable):
+            name = equality_expression.name
             return processor, expr.Assign(name, value)
 
         raise error(processor, equals, "Invalid assignment target.")
+
+    return processor, equality_expression
+
+
+def equality(processor: Parser) -> Tuple[Parser, expr.Expr]:
+    """ """
+    processor, term_expression = term(processor)
+
+    while True:
+        processor, is_match = match(processor, [scanner.TokenType.EQUAL_EQUAL])
+
+        if not is_match:
+            break
+
+        operator = previous(processor)
+        processor, right = term(processor)
+        term_expression = expr.Binary(term_expression, operator, right)
 
     return processor, term_expression
 
@@ -154,7 +262,9 @@ def term(processor: Parser) -> Tuple[Parser, expr.Expr]:
     processor, factor_expression = factor(processor)
 
     while True:
-        processor, is_match = match(processor, [scanner.TokenType.PLUS])
+        processor, is_match = match(
+            processor, [scanner.TokenType.PLUS, scanner.TokenType.MINUS]
+        )
 
         if not is_match:
             break
@@ -168,7 +278,7 @@ def term(processor: Parser) -> Tuple[Parser, expr.Expr]:
 
 def factor(processor: Parser) -> Tuple[Parser, expr.Expr]:
     """ """
-    processor, primary_expression = primary(processor)
+    processor, call_expression = call(processor)
 
     while True:
         processor, is_match = match(processor, [scanner.TokenType.STAR])
@@ -177,10 +287,46 @@ def factor(processor: Parser) -> Tuple[Parser, expr.Expr]:
             break
 
         operator = previous(processor)
-        processor, right = primary(processor)
-        primary_expression = expr.Binary(primary_expression, operator, right)
+        processor, right = call(processor)
+        call_expression = expr.Binary(call_expression, operator, right)
+
+    return processor, call_expression
+
+
+def call(processor: Parser) -> Tuple[Parser, expr.Expr]:
+    """ """
+    processor, primary_expression = primary(processor)
+
+    while True:
+        processor, is_match = match(processor, [scanner.TokenType.LEFT_PAREN])
+
+        if is_match:
+            processor, primary_expression = finish_call(processor, primary_expression)
+        else:
+            break
 
     return processor, primary_expression
+
+
+def finish_call(processor: Parser, callee: expr.Expr) -> Tuple[Parser, expr.Expr]:
+    """ """
+    arguments: List[expr.Expr] = []
+
+    if not check(processor, scanner.TokenType.RIGHT_PAREN):
+        while True:
+            processor, individual_expression = expression(processor)
+            arguments.append(individual_expression)
+
+            processor, is_match = match(processor, [scanner.TokenType.COMMA])
+
+            if not is_match:
+                break
+
+    processor, paren = consume(
+        processor, scanner.TokenType.RIGHT_PAREN, "Expect ')' after arguments."
+    )
+
+    return processor, expr.Call(callee, paren, arguments)
 
 
 def primary(processor: Parser) -> Tuple[Parser, expr.Expr]:
@@ -277,7 +423,11 @@ def synchronize(processor: Parser) -> Parser:
 
         token_type = peek(processor).token_type
 
-        if token_type in [scanner.TokenType.VAR, scanner.TokenType.PRINT]:
+        if token_type in [
+            scanner.TokenType.IF,
+            scanner.TokenType.PRINT,
+            scanner.TokenType.VAR,
+        ]:
             return processor
 
         procesor, _ = advance(processor)

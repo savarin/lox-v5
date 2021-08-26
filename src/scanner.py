@@ -11,26 +11,37 @@ class TokenType(enum.Enum):
     RIGHT_PAREN = "RIGHT_PAREN"
     LEFT_BRACE = "LEFT_BRACE"
     RIGHT_BRACE = "RIGHT_BRACE"
-    PLUS = "PLUS"
+    COMMA = "COMMA"
     SEMICOLON = "SEMICOLON"
+    PLUS = "PLUS"
+    MINUS = "MINUS"
     STAR = "STAR"
 
     # One or two character tokens.
     EQUAL = "EQUAL"
+    EQUAL_EQUAL = "EQUAL_EQUAL"
 
     # Literals.
     IDENTIFIER = "IDENTIFIER"
     NUMBER = "NUMBER"
 
     # Keywords
+    ELSE = "ELSE"
+    FUN = "FUN"
+    IF = "IF"
     VAR = "VAR"
     PRINT = "PRINT"
+    RETURN = "RETURN"
 
     EOF = "EOF"
 
 
 keywords: Dict[str, TokenType] = {
+    "else": TokenType.ELSE,
+    "fun": TokenType.FUN,
+    "if": TokenType.IF,
     "print": TokenType.PRINT,
+    "return": TokenType.RETURN,
     "var": TokenType.VAR,
 }
 
@@ -86,15 +97,21 @@ def scan_token(searcher: Scanner) -> Scanner:
         searcher = add_token(searcher, TokenType.LEFT_BRACE)
     elif character == "}":
         searcher = add_token(searcher, TokenType.RIGHT_BRACE)
+    elif character == ",":
+        searcher = add_token(searcher, TokenType.COMMA)
     elif character == "+":
         searcher = add_token(searcher, TokenType.PLUS)
+    elif character == "-":
+        searcher = add_token(searcher, TokenType.MINUS)
     elif character == "*":
         searcher = add_token(searcher, TokenType.STAR)
     elif character == ";":
         searcher = add_token(searcher, TokenType.SEMICOLON)
 
     elif character == "=":
-        searcher = add_token(searcher, TokenType.EQUAL)
+        searcher = add_token(
+            searcher, TokenType.EQUAL_EQUAL if match(searcher, "=") else TokenType.EQUAL
+        )
 
     elif character == "\n":
         searcher.line += 1
@@ -139,6 +156,18 @@ def peek(searcher: Scanner) -> str:
         return "\0"
 
     return searcher.source[searcher.current]
+
+
+def match(searcher: Scanner, expected: str) -> bool:
+    """ """
+    if is_at_end(searcher):
+        return False
+
+    if searcher.source[searcher.current] != expected:
+        return False
+
+    searcher.current += 1
+    return True
 
 
 def identifier(searcher: Scanner) -> Scanner:

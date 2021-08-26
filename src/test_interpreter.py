@@ -76,3 +76,25 @@ print c;"""
     assert result[6] == "1"
     assert result[7] == "2"
     assert result[8] == "3"
+
+
+def test_interpret_function() -> None:
+    """ """
+    result = source_to_result(source="fun add(a, b) { print a + b; } add(1, 2);")
+    assert len(result) == 1
+
+    assert result[0] == "3"
+
+    result = source_to_result(
+        source="fun count(n) { if (n == 1) return 1; return count(n - 1); } print count(3);"
+    )
+    assert len(result) == 1
+
+    assert result[0] == "1"
+
+    result = source_to_result(
+        source="fun fib(n) { if (n == 1) return 1; if (n == 2) return 1; return fib(n - 2) + fib(n - 1); } print fib(8);"
+    )
+    assert len(result) == 1
+
+    assert result[0] == "21"

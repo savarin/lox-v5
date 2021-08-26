@@ -1,3 +1,4 @@
+from typing import List
 import abc
 import dataclasses
 
@@ -16,6 +17,15 @@ class Assign(Expr):
 
     name: scanner.Token
     value: Expr
+
+
+@dataclasses.dataclass
+class Call(Expr):
+    """ """
+
+    callee: Expr
+    paren: scanner.Token
+    arguments: List[Expr]
 
 
 @dataclasses.dataclass

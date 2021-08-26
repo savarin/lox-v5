@@ -40,6 +40,9 @@ def run(emulator: VM) -> List[str]:
         elif instruction == compiler.OpCode.OP_ADD:
             emulator = binary_op(emulator, "+")
 
+        elif instruction == compiler.OpCode.OP_SUBTRACT:
+            emulator = binary_op(emulator, "-")
+
         elif instruction == compiler.OpCode.OP_MULTIPLY:
             emulator = binary_op(emulator, "*")
 

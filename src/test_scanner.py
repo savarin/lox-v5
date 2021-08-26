@@ -11,34 +11,37 @@ def source_to_tokens(source: str) -> List[scanner.Token]:
 
 def test_scan_expression() -> None:
     """ """
-    tokens = source_to_tokens(source="1 * (2 + 3);")
-    assert len(tokens) == 9
+    tokens = source_to_tokens(source="print 1 * (2 + 3);")
+    assert len(tokens) == 10
 
     assert tokens[0] == scanner.Token(
-        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+        token_type=scanner.TokenType.PRINT, lexeme="print", literal=None, line=1
     )
     assert tokens[1] == scanner.Token(
-        token_type=scanner.TokenType.STAR, lexeme="*", literal=None, line=1
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
     )
     assert tokens[2] == scanner.Token(
-        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+        token_type=scanner.TokenType.STAR, lexeme="*", literal=None, line=1
     )
     assert tokens[3] == scanner.Token(
-        token_type=scanner.TokenType.NUMBER, lexeme="2", literal=2, line=1
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
     )
     assert tokens[4] == scanner.Token(
-        token_type=scanner.TokenType.PLUS, lexeme="+", literal=None, line=1
+        token_type=scanner.TokenType.NUMBER, lexeme="2", literal=2, line=1
     )
     assert tokens[5] == scanner.Token(
-        token_type=scanner.TokenType.NUMBER, lexeme="3", literal=3, line=1
+        token_type=scanner.TokenType.PLUS, lexeme="+", literal=None, line=1
     )
     assert tokens[6] == scanner.Token(
-        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+        token_type=scanner.TokenType.NUMBER, lexeme="3", literal=3, line=1
     )
     assert tokens[7] == scanner.Token(
-        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
     )
     assert tokens[8] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[9] == scanner.Token(
         token_type=scanner.TokenType.EOF, lexeme="", literal=None, line=1
     )
 
@@ -370,4 +373,323 @@ print c;"""
     )
     assert tokens[61] == scanner.Token(
         token_type=scanner.TokenType.EOF, lexeme="", literal=None, line=19
+    )
+
+
+def test_scan_function() -> None:
+    """ """
+    tokens = source_to_tokens("fun add(a, b) { print a + b; } add(1, 2);")
+    assert len(tokens) == 22
+
+    assert tokens[0] == scanner.Token(
+        token_type=scanner.TokenType.FUN, lexeme="fun", literal=None, line=1
+    )
+    assert tokens[1] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="add", literal=None, line=1
+    )
+    assert tokens[2] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[3] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="a", literal=None, line=1
+    )
+    assert tokens[4] == scanner.Token(
+        token_type=scanner.TokenType.COMMA, lexeme=",", literal=None, line=1
+    )
+    assert tokens[5] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="b", literal=None, line=1
+    )
+    assert tokens[6] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[7] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_BRACE, lexeme="{", literal=None, line=1
+    )
+    assert tokens[8] == scanner.Token(
+        token_type=scanner.TokenType.PRINT, lexeme="print", literal=None, line=1
+    )
+    assert tokens[9] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="a", literal=None, line=1
+    )
+    assert tokens[10] == scanner.Token(
+        token_type=scanner.TokenType.PLUS, lexeme="+", literal=None, line=1
+    )
+    assert tokens[11] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="b", literal=None, line=1
+    )
+    assert tokens[12] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[13] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_BRACE, lexeme="}", literal=None, line=1
+    )
+    assert tokens[14] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="add", literal=None, line=1
+    )
+    assert tokens[15] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[16] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[17] == scanner.Token(
+        token_type=scanner.TokenType.COMMA, lexeme=",", literal=None, line=1
+    )
+    assert tokens[18] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="2", literal=2, line=1
+    )
+    assert tokens[19] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[20] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[21] == scanner.Token(
+        token_type=scanner.TokenType.EOF, lexeme="", literal=None, line=1
+    )
+
+    tokens = source_to_tokens(
+        "fun count(n) { if (n == 1) return 1; return count(n - 1); } print count(3);"
+    )
+    assert len(tokens) == 31
+
+    assert tokens[0] == scanner.Token(
+        token_type=scanner.TokenType.FUN, lexeme="fun", literal=None, line=1
+    )
+    assert tokens[1] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="count", literal=None, line=1
+    )
+    assert tokens[2] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[3] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[4] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[5] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_BRACE, lexeme="{", literal=None, line=1
+    )
+    assert tokens[6] == scanner.Token(
+        token_type=scanner.TokenType.IF, lexeme="if", literal=None, line=1
+    )
+    assert tokens[7] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[8] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[9] == scanner.Token(
+        token_type=scanner.TokenType.EQUAL_EQUAL, lexeme="==", literal=None, line=1
+    )
+    assert tokens[10] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[11] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[12] == scanner.Token(
+        token_type=scanner.TokenType.RETURN, lexeme="return", literal=None, line=1
+    )
+    assert tokens[13] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[14] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[15] == scanner.Token(
+        token_type=scanner.TokenType.RETURN, lexeme="return", literal=None, line=1
+    )
+    assert tokens[16] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="count", literal=None, line=1
+    )
+    assert tokens[17] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[18] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[19] == scanner.Token(
+        token_type=scanner.TokenType.MINUS, lexeme="-", literal=None, line=1
+    )
+    assert tokens[20] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[21] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[22] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[23] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_BRACE, lexeme="}", literal=None, line=1
+    )
+    assert tokens[24] == scanner.Token(
+        token_type=scanner.TokenType.PRINT, lexeme="print", literal=None, line=1
+    )
+    assert tokens[25] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="count", literal=None, line=1
+    )
+    assert tokens[26] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[27] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="3", literal=3, line=1
+    )
+    assert tokens[28] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[29] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[30] == scanner.Token(
+        token_type=scanner.TokenType.EOF, lexeme="", literal=None, line=1
+    )
+
+    tokens = source_to_tokens(
+        "fun fib(n) { if (n == 1) return 1; if (n == 2) return 1; return fib(n - 2) + fib(n - 1); } print fib(8);"
+    )
+    assert len(tokens) == 47
+
+    assert tokens[0] == scanner.Token(
+        token_type=scanner.TokenType.FUN, lexeme="fun", literal=None, line=1
+    )
+    assert tokens[1] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="fib", literal=None, line=1
+    )
+    assert tokens[2] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[3] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[4] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[5] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_BRACE, lexeme="{", literal=None, line=1
+    )
+    assert tokens[6] == scanner.Token(
+        token_type=scanner.TokenType.IF, lexeme="if", literal=None, line=1
+    )
+    assert tokens[7] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[8] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[9] == scanner.Token(
+        token_type=scanner.TokenType.EQUAL_EQUAL, lexeme="==", literal=None, line=1
+    )
+    assert tokens[10] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[11] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[12] == scanner.Token(
+        token_type=scanner.TokenType.RETURN, lexeme="return", literal=None, line=1
+    )
+    assert tokens[13] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[14] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[15] == scanner.Token(
+        token_type=scanner.TokenType.IF, lexeme="if", literal=None, line=1
+    )
+    assert tokens[16] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[17] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[18] == scanner.Token(
+        token_type=scanner.TokenType.EQUAL_EQUAL, lexeme="==", literal=None, line=1
+    )
+    assert tokens[19] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="2", literal=2, line=1
+    )
+    assert tokens[20] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[21] == scanner.Token(
+        token_type=scanner.TokenType.RETURN, lexeme="return", literal=None, line=1
+    )
+    assert tokens[22] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[23] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[24] == scanner.Token(
+        token_type=scanner.TokenType.RETURN, lexeme="return", literal=None, line=1
+    )
+    assert tokens[25] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="fib", literal=None, line=1
+    )
+    assert tokens[26] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[27] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[28] == scanner.Token(
+        token_type=scanner.TokenType.MINUS, lexeme="-", literal=None, line=1
+    )
+    assert tokens[29] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="2", literal=2, line=1
+    )
+    assert tokens[30] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[31] == scanner.Token(
+        token_type=scanner.TokenType.PLUS, lexeme="+", literal=None, line=1
+    )
+    assert tokens[32] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="fib", literal=None, line=1
+    )
+    assert tokens[33] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[34] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="n", literal=None, line=1
+    )
+    assert tokens[35] == scanner.Token(
+        token_type=scanner.TokenType.MINUS, lexeme="-", literal=None, line=1
+    )
+    assert tokens[36] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="1", literal=1, line=1
+    )
+    assert tokens[37] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[38] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[39] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_BRACE, lexeme="}", literal=None, line=1
+    )
+    assert tokens[40] == scanner.Token(
+        token_type=scanner.TokenType.PRINT, lexeme="print", literal=None, line=1
+    )
+    assert tokens[41] == scanner.Token(
+        token_type=scanner.TokenType.IDENTIFIER, lexeme="fib", literal=None, line=1
+    )
+    assert tokens[42] == scanner.Token(
+        token_type=scanner.TokenType.LEFT_PAREN, lexeme="(", literal=None, line=1
+    )
+    assert tokens[43] == scanner.Token(
+        token_type=scanner.TokenType.NUMBER, lexeme="8", literal=8, line=1
+    )
+    assert tokens[44] == scanner.Token(
+        token_type=scanner.TokenType.RIGHT_PAREN, lexeme=")", literal=None, line=1
+    )
+    assert tokens[45] == scanner.Token(
+        token_type=scanner.TokenType.SEMICOLON, lexeme=";", literal=None, line=1
+    )
+    assert tokens[46] == scanner.Token(
+        token_type=scanner.TokenType.EOF, lexeme="", literal=None, line=1
     )
