@@ -12,88 +12,106 @@ class VM:
     """ """
 
     bytecode: List[compiler.Byte]
+    values: compiler.Values
     ip: int
     stack: List[Optional[int]]
-    top: int
+    stack_top: int
 
 
-def init_vm(bytecode: List[compiler.Byte]) -> VM:
+def init_vm(bytecode: List[compiler.Byte], values: compiler.Values) -> VM:
     """ """
     stack: List[Optional[int]] = [None] * STACK_MAX
-    return VM(bytecode=bytecode, ip=0, stack=stack, top=0)
+    return VM(bytecode=bytecode, values=values, ip=0, stack=stack, stack_top=0)
 
 
-def run(emulator: VM) -> List[str]:
+def run(hypervisor: VM) -> List[str]:
     """ """
     result: List[str] = []
 
-    while not is_at_end(emulator):
-        emulator, instruction = read_byte(emulator)
+    while not is_at_end(hypervisor):
+        hypervisor, instruction = read_byte(hypervisor)
 
         if instruction == compiler.OpCode.OP_CONSTANT:
-            emulator, constant = read_constant(emulator)
-            emulator = push(emulator, constant)
+            hypervisor, constant = read_constant(hypervisor)
+            hypervisor = push(hypervisor, constant)
 
         elif instruction == compiler.OpCode.OP_POP:
-            emulator, value = pop(emulator)
+            hypervisor, value = pop(hypervisor)
+
+        elif instruction == compiler.OpCode.OP_GET:
+            hypervisor, location = read_byte(hypervisor)
+
+            assert isinstance(location, int)
+            value = hypervisor.stack[location]
+            hypervisor = push(hypervisor, value)
+
+        elif instruction == compiler.OpCode.OP_SET:
+            hypervisor, location = read_byte(hypervisor)
+            value = hypervisor.stack[hypervisor.stack_top - 1]
+
+            assert isinstance(location, int)
+            hypervisor.stack[location] = value
 
         elif instruction == compiler.OpCode.OP_ADD:
-            emulator = binary_op(emulator, "+")
+            hypervisor = binary_op(hypervisor, "+")
 
         elif instruction == compiler.OpCode.OP_SUBTRACT:
-            emulator = binary_op(emulator, "-")
+            hypervisor = binary_op(hypervisor, "-")
 
         elif instruction == compiler.OpCode.OP_MULTIPLY:
-            emulator = binary_op(emulator, "*")
+            hypervisor = binary_op(hypervisor, "*")
 
         elif instruction == compiler.OpCode.OP_PRINT:
-            emulator, value = pop(emulator)
-            result.append(str(value))
+            hypervisor, value = pop(hypervisor)
+            result.append(str(value or "nil"))
 
     return result
 
 
-def push(emulator: VM, value: int) -> VM:
+def push(hypervisor: VM, constant: Optional[int]) -> VM:
     """ """
-    emulator.stack[emulator.top] = value
-    emulator.top += 1
+    hypervisor.stack[hypervisor.stack_top] = constant
+    hypervisor.stack_top += 1
 
-    return emulator
+    return hypervisor
 
 
-def pop(emulator: VM) -> Tuple[VM, int]:
+def pop(hypervisor: VM) -> Tuple[VM, Optional[int]]:
     """ """
-    emulator.top -= 1
-    value = emulator.stack[emulator.top]
+    hypervisor.stack_top -= 1
+    item = hypervisor.stack[hypervisor.stack_top]
 
-    assert value is not None
-    return emulator, value
+    # assert item is not None
+    return hypervisor, item
 
 
-def read_byte(emulator: VM) -> Tuple[VM, compiler.Byte]:
+def read_byte(hypervisor: VM) -> Tuple[VM, compiler.Byte]:
     """ """
-    emulator.ip += 1
-    instruction = emulator.bytecode[emulator.ip - 1]
+    hypervisor.ip += 1
+    instruction = hypervisor.bytecode[hypervisor.ip - 1]
 
-    return emulator, instruction
+    return hypervisor, instruction
 
 
-def read_constant(emulator: VM) -> Tuple[VM, int]:
+def read_constant(hypervisor: VM) -> Tuple[VM, Optional[int]]:
     """ """
-    emulator, constant = read_byte(emulator)
+    hypervisor, location = read_byte(hypervisor)
 
-    assert isinstance(constant, int)
-    return emulator, constant
+    if location is None:
+        return hypervisor, None
+
+    assert isinstance(location, int)
+    return hypervisor, hypervisor.values.array[location]
 
 
-def binary_op(emulator: VM, op: str) -> VM:
+def binary_op(hypervisor: VM, op: str) -> VM:
     """ """
-    emulator, b = pop(emulator)
-    emulator, a = pop(emulator)
+    hypervisor, b = pop(hypervisor)
+    hypervisor, a = pop(hypervisor)
 
-    return push(emulator, eval(f"a {op} b"))
+    return push(hypervisor, eval(f"a {op} b"))
 
 
-def is_at_end(emulator: VM) -> bool:
+def is_at_end(hypervisor: VM) -> bool:
     """ """
-    return emulator.ip == len(emulator.bytecode)
+    return hypervisor.ip == len(hypervisor.bytecode)
